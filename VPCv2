@@ -1,3 +1,10 @@
+#Description:  This template deploys a VPC, with a pair of public and private subnets spread
+#  across two Availability Zones. It deploys an internet gateway, with a default
+#  route on the public subnets.
+
+# Design decision: We chose to use t2.micro instances because they are cost-effective.
+# However, you may want to use larger instances for better performance.
+
 AWSTemplateFormatVersion: 2010-09-09
 Resources:
 #Creating the VPC 
