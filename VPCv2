@@ -108,7 +108,7 @@ Resources:
           - DeviceIndex: 0
             AssociatePublicIpAddress: yes
             DeleteOnTermination: yes
-            Groups:
+            Groups:<youshouldremoveme>
               - !Ref InstanceSecurityGroup
         ImageId: ami-0b5eea76982371e91
         InstanceType: t2.micro
