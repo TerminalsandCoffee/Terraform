@@ -97,7 +97,7 @@ Resources:
           FromPort: 80
           ToPort: 80
           CidrIp: 0.0.0.0/0 
-
+youshouldcommentthisoutforthisfiletowork
 #Configuring launch template
   LaunchTemplate:
     Type: 'AWS::EC2::LaunchTemplate'
@@ -108,7 +108,7 @@ Resources:
           - DeviceIndex: 0
             AssociatePublicIpAddress: yes
             DeleteOnTermination: yes
-            Groups:<youshouldremoveme>
+            Groups:
               - !Ref InstanceSecurityGroup
         ImageId: ami-0b5eea76982371e91
         InstanceType: t2.micro
