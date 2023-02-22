@@ -85,7 +85,7 @@ Resources:
   InstanceSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
-      GroupName: SecurityGroup7
+      GroupName: SecurityGroupWeek7
       GroupDescription: Enable SSH access and HTTP 
       VpcId: !Ref VPC
       SecurityGroupIngress:
@@ -122,7 +122,7 @@ Resources:
             amazon-linux-extras install epel -y
             yum install stress -y
 	    EC2AZ=$(curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone)
-            echo '<center><h1>This Amazon EC2 instance is located in Availability Zone: AZID </h1></center>' > /var/www/html/index.txt
+            echo '<center><h1>This is Raf's test page and this Amazon EC2 instance is located in Availability Zone: AZID </h1></center>' > /var/www/html/index.txt
             sed "s/AZID/$EC2AZ/" /var/www/html/index.txt > /var/www/html/index.html
 
 
