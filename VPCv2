@@ -1,166 +1,190 @@
-# Define provider
-provider "aws" {
-  region = "us-east-1"
-}
+AWSTemplateFormatVersion: 2010-09-09
+Resources:
+#Creating the VPC 
+  VPC:
+    Type: 'AWS::EC2::VPC'
+    Properties:
+      CidrBlock: 10.10.0.0/16
+      EnableDnsSupport: yes
+      EnableDnsHostnames: yes
 
-# Create VPC
-resource "aws_vpc" "week7_vpc" {
-  cidr_block = "10.10.0.0/16"
-}
+#Creating Internet Gateway
+  InternetGateway:
+    Type: 'AWS::EC2::InternetGateway'
 
-# Create public subnets
-resource "aws_subnet" "public_subnet_1" {
-  vpc_id     = aws_vpc.example_vpc.id
-  cidr_block = "10.10.1.0/24"
-  availability_zone = "us-east-1a"
-}
+#Attaching the ITG to the VPC
+  InternetGatewayAttachment:
+    Type: 'AWS::EC2::VPCGatewayAttachment'
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
 
-resource "aws_subnet" "public_subnet_2" {
-  vpc_id     = aws_vpc.example_vpc.id
-  cidr_block = "10.10.2.0/24"
-  availability_zone = "us-east-1b"
-}
+#Creaating Public Subnet 1 
+  PublicSubnet1:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: us-east-1a
+      CidrBlock: 10.10.1.0/24
+      MapPublicIpOnLaunch: yes
 
-resource "aws_subnet" "public_subnet_3" {
-  vpc_id     = aws_vpc.example_vpc.id
-  cidr_block = "10.10.3.0/24"
-  availability_zone = "us-east-1c"
-}
+#Creating Public Subnet 2 
+  PublicSubnet2:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: us-east-1b
+      CidrBlock: 10.10.2.0/24
+      MapPublicIpOnLaunch: yes
 
-# Create security group for web servers
-resource "aws_security_group" "web_server_security_group" {
-  name_prefix = "web-server-sg-"
+#Creating Public Subnet 3
+  PublicSubnet3:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: us-east-1c
+      CidrBlock: 10.10.3.0/24
+      MapPublicIpOnLaunch: yes 
 
-  ingress {
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    # Allow traffic from the Application Load Balancer only
-    security_groups = [aws_security_group.load_balancer_security_group.id]
-  }
-}
+#Creating a Public Route Table
+  PublicRouteTable:
+    Type: 'AWS::EC2::RouteTable'
+    Properties:
+      VpcId: !Ref VPC
 
-# Create security group for load balancer
-resource "aws_security_group" "load_balancer_security_group" {
-  name_prefix = "load-balancer-sg-"
+#Configuring Public Route
+  PublicRoute:
+    Type: 'AWS::EC2::Route'
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
 
-  ingress {
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    # Allow traffic from anywhere (0.0.0.0/0)
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-}
+#Associating Subnet 1 and Route Table  
+  PublicSubnet1RouteTableAssociation:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PublicSubnet1
 
-# Create Launch Configuration
-resource "aws_launch_configuration" "example_launch_config" {
-  image_id = "ami-0c94855ba95c71c99"
-  instance_type = "t2.micro"
-  # Install Apache web server
-  user_data = <<-EOF
-              #!/bin/bash
-              yum update -y
-              yum install -y httpd
-              systemctl start httpd
-              systemctl enable httpd
-              EOF
-  # Use web server security group
-  security_groups = [aws_security_group.web_server_security_group.id]
-}
+#Associating Subnet 2 and Route Table
+  PublicSubnet2RouteTableAssociation:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PublicSubnet2 
 
-# Create Autoscaling Group
-resource "aws_autoscaling_group" "example_autoscaling_group" {
-  name = "example-autoscaling-group"
-  desired_capacity = 2
-  max_size = 5
-  min_size = 2
+#Associating Subnet 3 and Route Table
+  PublicSubnet3RouteTableAssociation:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PublicSubnet3 
 
-  # Use public subnets for autoscaling group
-  vpc_zone_identifier = [
-    aws_subnet.public_subnet_1.id,
-    aws_subnet.public_subnet_2.id,
-    aws_subnet.public_subnet_3.id
-  ]
+#Creating Security Group
+  InstanceSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupName: SecurityGroup7
+      GroupDescription: Enable SSH access and HTTP 
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0 
 
-  # Use Launch Configuration
-  launch_configuration = aws_launch_configuration.example_launch_config.name
+#Configuring launch template
+  LaunchTemplate:
+    Type: 'AWS::EC2::LaunchTemplate'
+    Properties:
+      LaunchTemplateName: LaunchTemplate7
+      LaunchTemplateData:
+        NetworkInterfaces:
+          - DeviceIndex: 0
+            AssociatePublicIpAddress: yes
+            DeleteOnTermination: yes
+            Groups:
+              - !Ref InstanceSecurityGroup
+        ImageId: ami-0b5eea76982371e91
+        InstanceType: t2.micro
+        UserData:
+          'Fn::Base64': !Sub |
+            #!/bin/bash
+            yum update -y
+            yum install httpd -y
+            systemctl start httpd
+            systemctl enable httpd
+            amazon-linux-extras install epel -y
+            yum install stress -y
+		EC2AZ=$(curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone)
+            echo '<center><h1>This Amazon EC2 instance is located in Availability Zone: AZID </h1></center>' > /var/www/html/index.txt
+            sed "s/AZID/$EC2AZ/" /var/www/html/index.txt > /var/www/html/index.html
 
-  # Set health check for the load balancer
-  health_check_type = "ELB"
 
-  # Tag autoscaling group for easy identification
-  tags = [
-    {
-      key = "Name"
-      value = "example-autoscaling-group"
-      propagate_at_launch = true
-    }
-  ]
-}
+#Create an Auto Scaling Group
+  AutoScalingGroup:
+    Type: 'AWS::AutoScaling::AutoScalingGroup'
+    Properties:
+      LaunchTemplate:
+        LaunchTemplateId: !Ref LaunchTemplate
+        Version: !GetAtt LaunchTemplate.LatestVersionNumber
+      MaxSize: '5'
+      MinSize: '2'
+      DesiredCapacity: '2'
+      VPCZoneIdentifier:
+        - !Ref PublicSubnet1
+        - !Ref PublicSubnet2
+        - !Ref PublicSubnet3
 
-# Create Application Load Balancer
-resource "aws_lb" "example_lb" {
-  name = "example-lb"
-  internal = false
-  load_balancer_type = "application"
+#Creating an Application Load Balancer
+  ApplicationLoadBalancer : 
+    Type : 'AWS::ElasticLoadBalancingV2::LoadBalancer'
+    Properties :
+      SecurityGroups: 
+        - !Ref InstanceSecurityGroup 
+      Subnets : 
+        - !Ref PublicSubnet1
+        - !Ref PublicSubnet2
+        - !Ref PublicSubnet3 
 
-  subnets = [
-    aws_subnet.public_subnet_1.id,
-    aws_subnet.public_subnet_2.id,
-    aws_subnet.public_subnet_3.id
-  ]
+#Configuring Application Load Balancer Target Group 
+  ALBTargetGroup : 
+    Type : 'AWS::ElasticLoadBalancingV2::TargetGroup'
+    Properties : 
+      HealthCheckIntervalSeconds : '30'
+      HealthCheckTimeoutSeconds : '5'
+      Port : '80'
+      Protocol : HTTP
+      VpcId: !Ref VPC
+                     
+#Scaling Policy
+  ScalingPolicy:
+    Type: 'AWS::AutoScaling::ScalingPolicy'
+    Properties:
+      AdjustmentType: ChangeInCapacity
+      AutoScalingGroupName: !Ref AutoScalingGroup
+      ScalingAdjustment: '1'
 
-  security_groups = [
-    aws_security_group.load_balancer_security_group.id
-  ]
-
-  enable_deletion_protection = false
-
-  tags = {
-    Name = "example-lb"
-  }
-
-  # Create listener for HTTP traffic
-  listener {
-    protocol = "HTTP"
-    port = "80"
-    default_action {
-      type = "forward"
-      target_group_arn = aws_lb_target_group.example_target_group.arn
-    }
-  }
-}
-
-# Create target group for the autoscaling group
-resource "aws_lb_target_group" "example_target_group" {
-  name = "example-target-group"
-  port = 80
-  protocol = "HTTP"
-  vpc_id = aws_vpc.example_vpc.id
-
-  health_check {
-    path = "/"
-    port = "80"
-    protocol = "HTTP"
-    interval = 30
-    timeout = 10
-    unhealthy_threshold = 2
-    healthy_threshold = 2
-  }
-}
-
-# Create listener rule for the target group
-resource "aws_lb_listener_rule" "example_listener_rule" {
-  listener_arn = aws_lb.listener[0].arn
-
-  action {
-    type = "forward"
-    target_group_arn = aws_lb_target_group.example_target_group.arn
-  }
-
-  condition {
-    field = "path-pattern"
-    values = ["/"]
-  }
-}
+#Alarm for testing 
+  CloudWatchAlarm:
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      EvaluationPeriods: '1'
+      Statistic: Average
+      Threshold: '50'
+      AlarmDescription: Alarm set fo 50% of CPU utilization 
+      Period: '60'
+      AlarmActions:
+        - !Ref ScalingPolicy
+      Namespace: AWS/EC2
+      Dimensions:
+        - Name: AutoScalingGroupName
+          Value:
+            Ref: AutoScalingGroup
+      ComparisonOperator: GreaterThanThreshold
+      MetricName: CPUUtilization
