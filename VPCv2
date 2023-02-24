@@ -183,7 +183,7 @@ youshouldcommentthisoutforthisfiletowork
       EvaluationPeriods: '1'
       Statistic: Average
       Threshold: '50'
-      AlarmDescription: Alarm set fo 50% of CPU utilization 
+      AlarmDescription: Alarm set for 50% of CPU utilization 
       Period: '60'
       AlarmActions:
         - !Ref ScalingPolicy
