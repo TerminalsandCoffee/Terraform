@@ -1,0 +1,79 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Resources:
+  MyDynamoDBTable:
+    Type: 'AWS::DynamoDB::Table'
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: episode_name
+          AttributeType: S
+        - AttributeName: episode_number
+          AttributeType: N
+      KeySchema:
+        - AttributeName: episode_name
+          KeyType: HASH
+        - AttributeName: episode_number
+          KeyType: RANGE
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+      TableName: brooklyn_99_episodes
+  MyDynamoDBData:
+    Type: 'AWS::DynamoDB::Table'
+    Properties:
+      TableName: !Ref MyDynamoDBTable
+      Item:
+        - episode_name: {S: "The Box"}
+          season_number: {N: "5"}
+          episode_number: {N: "14"}
+        - episode_name: {S: "Halloween III"}
+          season_number: {N: "3"}
+          episode_number: {N: "5"}
+        - episode_name: {S: "Moo Moo"}
+          season_number: {N: "4"}
+          episode_number: {N: "16"}
+        - episode_name: {S: "The Pontiac Bandit Returns"}
+          season_number: {N: "2"}
+          episode_number: {N: "10"}
+        - episode_name: {S: "Jake and Amy"}
+          season_number: {N: "5"}
+          episode_number: {N: "22"}
+        - episode_name: {S: "The Chopper"}
+          season_number: {N: "1"}
+          episode_number: {N: "2"}
+        - episode_name: {S: "NineNine"}
+          season_number: {N: "5"}
+          episode_number: {N: "9"}
+        - episode_name: {S: "The Vulture"}
+          season_number: {N: "1"}
+          episode_number: {N: "5"}
+        - episode_name: {S: "Johnny and Dora"}
+          season_number: {N: "2"}
+          episode_number: {N: "23"}
+        - episode_name: {S: "The Bet"}
+          season_number: {N: "1"}
+          episode_number: {N: "13"}
+  MyEC2Instance:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      ImageId: ami-0c94855ba95c71c99
+      InstanceType: t2.micro
+      KeyName: MyKeyPair
+      SubnetId: subnet-12345678
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          yum update -y
+          yum install -y awscli
+          aws s3 cp s3://my-bucket/my-script.sh /home/ec2-user/my-script.sh
+          chmod +x /home/ec2-user/my-script.sh
+          su ec2-user -c "/home/ec2-user/my-script.sh"
+      IamInstanceProfile: !Ref MyEC2InstanceProfile
+      SecurityGroupIds:
+        - sg-12345678
+  MyEC2InstanceProfile:
+    Type: 'AWS::IAM::InstanceProfile'
+    Properties:
+      Roles:
+        - !Ref MyEC2Role
+  MyEC2Role:
+    Type: '
